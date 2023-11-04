@@ -5,8 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 from sql_app import models, schemas, crud
+from sql_app.database import SessionLocal, engine
 
 app = FastAPI()
+models.Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
@@ -15,7 +17,7 @@ def get_db():
     finally:
         db.close()
 
-class UserCreatedResponse(schemas.UserResponse):
+class UserCreatedResponse(BaseModel):
     status: str = "ok"
 
 class BadRequestResponse(BaseModel):
@@ -30,34 +32,35 @@ class NotFoundResponse(BaseModel):
 def health():
     return "string"
 
-@app.post("/user", response_model=UserCreatedResponse, responses={
-    200: {"model": UserCreatedResponse, "description": "User created"},
-    400: {"model": BadRequestResponse, "description": "Bad request"}
+@app.post("/user", response_model=schemas.User, responses={
+    200: {"description": "User created"},
+    400: {"model": BadRequestResponse, "description": "Bad request"},
 })
 def create_user(user: schemas.User, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
+    db_user = crud.get_user(db, user.username)
     if db_user:
-        raise HTTPException(status_code=400, detail="User with this email already exists")
-    return {"status": "ok"}
+        raise HTTPException(status_code=400, detail="User with this username already exists")
+    user = crud.create_user(db=db, user=user)
+    return user.__dict__
 
-@app.get("/user/{username}", response_model=UserCreatedResponse, responses={
+@app.get("/user/{username}", response_model=schemas.User, responses={
     200: {"description": "User found"},
     400: {"model": BadRequestResponse, "description": "Bad request"},
     404: {"model": NotFoundResponse, "description": "User not found"}
 })
-def get_user(username: int, db: Session = Depends(get_db)):
+def get_user(username: str, db: Session = Depends(get_db)):
     user = crud.get_user(db, username)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return user.__dict__
 
-@app.put("/user/{username}", response_model=UserCreatedResponse, responses={
-    200: {"description": "User found"},
+@app.put("/user/{username}", response_model=dict, responses={
+    200: {"model": UserCreatedResponse, "description": "User found"},
     400: {"model": BadRequestResponse, "description": "Bad request"},
     404: {"model": NotFoundResponse, "description": "User not found"}
 })
-def update_user(username: str, user_data: schemas.User, db: Session = Depends(get_db)):
-    user = crud.get_user_by_username(db, username)
+def update_user(username, user_data: schemas.User, db: Session = Depends(get_db)):
+    user = crud.get_user(db, username)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -69,15 +72,15 @@ def update_user(username: str, user_data: schemas.User, db: Session = Depends(ge
     user.phone = user_data.phone
 
     db.commit()
-    return UserCreatedResponse(**user.dict(), status="ok")
+    return {"status": "ok"}
 
-@app.delete("/user/{username}", response_model=UserCreatedResponse, responses={
-    200: {"description": "User found"},
+@app.delete("/user/{username}", response_model=dict, responses={
+    200: {"model": UserCreatedResponse, "description": "User found"},
     400: {"model": BadRequestResponse, "description": "Bad request"},
     404: {"model": NotFoundResponse, "description": "User not found"}
 })
 def delete_user(username: str, db: Session = Depends(get_db)):
-    user = crud.get_user_by_username(db, username)
+    user = crud.get_user(db, username)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
