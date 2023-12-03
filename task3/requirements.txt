@@ -1,0 +1,7 @@
+fastapi
+uvicorn[all]
+sqlalchemy
+python-jose
+httpx
+passlib
+python-multipart
