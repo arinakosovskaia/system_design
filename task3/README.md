@@ -1,6 +1,6 @@
 Here's the interaction between the services
 
-![](/Users/arina/Documents/GitHub/system_design/task3/pic.png "PIC")
+![Screenshot](https://github.com/arinakosovskaia/system_design/blob/main/task3/pic.png)
 
 **Authorization Service**
 
