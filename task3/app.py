@@ -25,7 +25,7 @@ SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 models.Base.metadata.create_all(bind=engine)
@@ -70,7 +70,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 
-@app.post("/users/token")
+@app.post("/token")
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: Session = Depends(get_db)):
     user = crud.get_user(db, form_data.username)
     if not user or not pwd_context.verify(form_data.password, user.password):
@@ -131,7 +131,7 @@ async def create_order(order: schemas.OrderCreate, db: Session = Depends(get_db)
     404: {"model": NotFoundResponse, "description": "User not found"}
 })
 async def get_previous_orders(current_user: dict = Depends(get_current_user), skip: int = 0, limit: int = 10, db: Session = Depends(get_db), all: bool = False):
-    previous_orders = crud.get_previous_orders(db, user.username, skip=skip, limit=limit, all=all)
+    previous_orders = crud.get_orders(db, current_user.username)
     return previous_orders
 
 @app.post("/billing/deposit", response_model=dict, responses={

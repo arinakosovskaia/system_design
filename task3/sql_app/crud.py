@@ -23,8 +23,8 @@ def get_user_by_email(db: Session, email: str):
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
-def get_orders(db: Session, username: str, skip: int = 0, limit: int = 100):
-    return db.query(models.Order).filter(models.Order.username == username).offset(skip).limit(limit).all()
+def get_orders(db: Session, username: str):
+    return db.query(models.Order).filter(models.Order.username == username).all()
 
 def deposit_money(db: Session, username: str, amount: float):
     user = db.query(models.User).filter(models.User.username == username).first()
